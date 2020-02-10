@@ -131,6 +131,11 @@ type (
 		account       *common.Address
 		key, prevalue common.Hash
 	}
+	pkdataChange struct {
+		account   *common.Address
+		pk        common.Hash
+		prePkData PkData
+	}
 	codeChange struct {
 		account            *common.Address
 		prevcode, prevhash []byte
@@ -285,6 +290,21 @@ func (ch storageChange) Dirtied() *common.Address {
 }
 
 func (ch storageChange) TokenDirtied() int32 {
+	return TokenNotDirtied
+}
+
+func (ch pkdataChange) Revert(s *StateDB) {
+	stobj := s.getStateObject(*ch.account)
+	if stobj != nil {
+		stobj.setPkData(ch.pk, ch.prePkData)
+	}
+}
+
+func (ch pkdataChange) Dirtied() *common.Address {
+	return ch.account
+}
+
+func (ch pkdataChange) TokenDirtied() int32 {
 	return TokenNotDirtied
 }
 

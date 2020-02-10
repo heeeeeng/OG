@@ -31,7 +31,8 @@ type AccountData struct {
 	Address  common.Address
 	Balances BalanceSet
 	Nonce    uint64
-	Root     common.Hash
+	Root     common.Hash // root hash of contract data
+	PkRoot   common.Hash // root hash of unique primary key
 	CodeHash []byte
 }
 
@@ -58,6 +59,9 @@ type StateObject struct {
 
 	committedStorage map[common.Hash]common.Hash
 	dirtyStorage     map[common.Hash]common.Hash
+
+	committedPkData map[common.Hash]PkData
+	dirtyPkData     map[common.Hash]PkData
 
 	trie Trie
 	db   StateDBInterface
@@ -185,6 +189,19 @@ func (s *StateObject) SetState(db Database, key, value common.Hash) {
 
 func (s *StateObject) setState(key, value common.Hash) {
 	s.dirtyStorage[key] = value
+}
+
+func (s *StateObject) SetPkData(db Database, pk common.Hash, data PkData) {
+	s.db.AppendJournal(&pkdataChange{
+		account:   &s.address,
+		pk:        pk,
+		prePkData: data,
+	})
+	s.setPkData(pk, data)
+}
+
+func (s *StateObject) setPkData(pk common.Hash, data PkData) {
+	s.dirtyPkData[pk] = data
 }
 
 func (s *StateObject) GetCode(db Database) []byte {
@@ -324,7 +341,12 @@ func (s *StateObject) Decode(b []byte, db *StateDB) error {
 	return err
 }
 
-// BalanceSet
+/*
+Balance set
+
+BalanceSet is a data structure for multi token balance
+*/
+
 type BalanceSet map[int32]*math.BigInt
 
 func NewBalanceSet() BalanceSet {
@@ -414,6 +436,24 @@ func (b *BalanceSet) Msgsize() int {
 		l += 4 + v.Msgsize()
 	}
 	return l
+}
+
+/*
+Primary
+*/
+
+type PkData struct {
+	Pk      []byte
+	Version uint64
+	Data    []byte
+}
+
+func NewPkData(pk []byte, version uint64, data []byte) *PkData {
+	return &PkData{
+		Pk:      pk,
+		Version: version,
+		Data:    data,
+	}
 }
 
 /*
