@@ -3,7 +3,7 @@ FROM golang:1.12-alpine as builder
 
 RUN apk add --no-cache make gcc musl-dev linux-headers git
 
-ENV GOPROXY https://goproxy.io
+ENV GOPROXY https://goproxy.cn
 ENV GO111MODULE on
 
 WORKDIR /go/src/github.com/annchain/OG
@@ -19,7 +19,7 @@ FROM alpine:latest
 
 RUN apk add --no-cache curl iotop busybox-extras
 
-COPY --from=builder /go/src/github.com/annchain/OG/deployment/docker_private_server.toml /opt/config.toml
+#COPY --from=builder /go/src/github.com/annchain/OG/deployment/docker_private_server.toml /opt/config.toml
 COPY --from=builder /go/src/github.com/annchain/OG/deployment/genesis.json /opt/
 COPY --from=builder /go/src/github.com/annchain/OG/build/og /opt/
 
